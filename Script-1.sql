@@ -1,4 +1,4 @@
-create table if not exists product (
+create table if not exists vk_users (
 	id serial primary key,
 	vk_id integer,
 	vk_age integer,

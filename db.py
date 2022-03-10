@@ -35,6 +35,15 @@ def check_param_bd(connection_db, user_id, param):
     return 1  # Поле заполнено
 
 
+def get_param_bd(connection_db, user_id, param):
+    param = 'vk_' + param
+    sel = connection_db.execute(f'''
+        SELECT {param} FROM vk_users
+        WHERE vk_id = '{user_id}'
+        ''').fetchall()
+    return sel[0][0]
+
+
 def check_all_params(connection_bd, user_id):
     data = ['age', 'sex', 'city', 'relation']
     for param in data:
