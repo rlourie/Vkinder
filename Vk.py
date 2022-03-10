@@ -1,6 +1,7 @@
 from vk_api.longpoll import VkEventType
 from db import insert_info_bd, update_param, check_param_bd, check_all_params, get_param_bd, connection
 from algo import write_msg, get_info, search, get_photo, vk_session, longpoll
+
 if __name__ == '__main__':
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW:
