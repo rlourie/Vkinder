@@ -1,10 +1,7 @@
 from datetime import datetime
-from Token import token, access_token
 import math
-import vk_api
-from vk_api.longpoll import VkLongPoll
 from random import randrange
-from db import update_param, get_param_bd, connection
+from db import BD
 
 
 def age(b_date):
@@ -17,11 +14,11 @@ def age(b_date):
         return None
 
 
-def write_msg(user_id, message):
+def write_msg(user_id, vk_session, message):
     vk_session.method('messages.send', {'user_id': user_id, 'message': message, 'random_id': randrange(10 ** 7), })
 
 
-def get_info(user_id):
+def get_info(user_id, vk_session):
     info = vk_session.method('users.get', {"user_ids": user_id, "fields": "bdate,sex,city,relation"})
     if len(str(info[0].get('bdate')).split('.')) != 3 and 'city' not in info[0]:
         result_dict = {'age': None, 'sex': info[0].get('sex'),
@@ -47,7 +44,8 @@ def get_info(user_id):
     return result_dict  # Получаем всю инфу по пользователю
 
 
-def search(user_id, count, offset):
+def search(user_id, count, offset, vk_user_session):
+    my_bd = BD()
     while True:
         search_setting = {'count': count, 'offset': offset, 'age_from': 20, 'age_to': 21, 'sex': 2, 'status': 6,
                           'fields': 'bdate'}
@@ -55,17 +53,17 @@ def search(user_id, count, offset):
         for param in data:
             if param == 'age' or param == 'sex' or param == 'relation':
                 if param == 'age':
-                    search_setting['age_from'] = get_param_bd(connection, user_id, param) - 1
-                    search_setting['age_to'] = get_param_bd(connection, user_id, param)
+                    search_setting['age_from'] = my_bd.get_param_bd(user_id, param) - 1
+                    search_setting['age_to'] = my_bd.get_param_bd(user_id, param)
                 if param == 'sex':
-                    if get_param_bd(connection, user_id, param) == '2':
+                    if my_bd.get_param_bd(user_id, param) == '2':
                         search_setting['sex'] = 1
                     else:
                         search_setting['sex'] = 2
                 if param == 'relation':
                     pass
             else:
-                search_setting[param] = get_param_bd(connection, user_id, param)
+                search_setting[param] = my_bd.get_param_bd(user_id, param)
         res = vk_user_session.method('users.search', search_setting)
         result = {}
         if len(res['items']) == 0:
@@ -75,15 +73,14 @@ def search(user_id, count, offset):
                 age_user = age(elem['bdate'])
                 result[str(elem["id"])] = elem["first_name"] + ' ' + elem["last_name"] + ' ' + str(
                     age_user) + ' ' + 'лет'
-                update_param(connection, user_id, 'offset', offset + 1)
+                my_bd.update_param(user_id, 'offset', offset + 1)
                 return result
             else:
                 offset += 1
                 break
 
 
-def get_photo(user_id):
-    result = []
+def get_photo(user_id, vk_user_session):
     max_like = {'-1': -1}
     foto_param = {"album_id": "profile", "extended": "1", "photo_sizes": "1", "owner_id": str(user_id)}
     res = vk_user_session.method('photos.get', foto_param)
@@ -99,8 +96,3 @@ def get_photo(user_id):
         if val == -1:
             del max_like[key]
     return max_like
-
-
-vk_session = vk_api.VkApi(token=token)
-vk_user_session = vk_api.VkApi(token=access_token)
-longpoll = VkLongPoll(vk_session)
