@@ -23,14 +23,24 @@ def write_msg(user_id, message):
 
 def get_info(user_id):
     info = vk_session.method('users.get', {"user_ids": user_id, "fields": "bdate,sex,city,relation"})
-    if len(str(info[0].get('bdate')).split('.')) != 3:
+    if len(str(info[0].get('bdate')).split('.')) != 3 and 'city' not in info[0]:
         result_dict = {'age': None, 'sex': info[0].get('sex'),
-                       'city': info[0].get('city').get('id'),
+                       'city': None,
                        'relation': info[0].get('relation')}
     else:
-        result_dict = {'age': age(info[0].get('bdate')), 'sex': info[0].get('sex'),
-                       'city': info[0].get('city').get('id'),
-                       'relation': info[0].get('relation')}
+        if len(str(info[0].get('bdate')).split('.')) != 3:
+            result_dict = {'age': None, 'sex': info[0].get('sex'),
+                           'city': info[0].get('city').get('id'),
+                           'relation': info[0].get('relation')}
+        else:
+            if 'city' not in info[0]:
+                result_dict = {'age': age(info[0].get('bdate')), 'sex': info[0].get('sex'),
+                               'city': None,
+                               'relation': info[0].get('relation')}
+            else:
+                result_dict = {'age': age(info[0].get('bdate')), 'sex': info[0].get('sex'),
+                               'city': info[0].get('city').get('id'),
+                               'relation': info[0].get('relation')}
     for key, value in result_dict.items():
         if value is None:
             result_dict[key] = 0  # Обнуляем пустые поля
